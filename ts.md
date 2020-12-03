@@ -347,3 +347,164 @@ let myArray: ReadonlyStringArray = ["Alice", "Bob"];
 myArray[2] = "Mallory"; // error!
 ```
 
+### 类类型
+
+TypeScript能够用接口来明确的强制一个类去符合某种契约，也可以在接口中描述一个方法，在类里实现它。
+
+```typescript
+interface ClockInterface {
+    currentTime: Date;
+    setTime(d: Date);
+}
+
+class Clock implements ClockInterface {
+    currentTime: Date;
+    setTime(d: Date) {
+        this.currentTime = d;
+    }
+    constructor(h: number, m: number) { }
+}
+```
+
+接口描述了类的*公共部分*，而不是公共和私有两部分。 它不会帮你检查类是否具有某些私有成员。
+
+```javascript
+// 上例编译成js代码
+var Clock = /** @class */ (function () {
+    function Clock(h, m) {
+    }
+    Clock.prototype.setTime = function (d) {
+        this.currentTime = d;
+    };
+    return Clock;
+}());
+```
+
+#### 类静态部分与实例部分的区别
+
+类是具有两个类型的：静态部分的类型和实例的类型。
+
+当一个类实现了一个接口时，只对其实例部分进行类型检查。当你用构造签名去定义一个接口，并试图定义一个类去实现这个接口，会得到一个错误：
+
+```typescript
+interface ClockConstructor {
+    new (hour: number, minute: number);
+}
+
+class Clock implements ClockConstructor {
+    currentTime: Date;
+    constructor(h: number, m: number) { }
+}
+```
+
+这是因为constructor属于静态部分，不在检查范围，所以我们应该直接操作静态部分：
+
+```typescript
+// 两个接口， ClockConstructor为构造函数所用，ClockInterface为实例方法所用。
+interface ClockConstructor {
+    new (hour: number, minute: number): ClockInterface;
+}
+interface ClockInterface {
+    tick();
+}
+// createClock的第一个参数是ClockConstructor类型，在createClock(AnalogClock, 7, 32)里，会检查AnalogClock是否符合构造函数签名。
+function createClock(ctor: ClockConstructor, hour: number, minute: number): ClockInterface {
+    return new ctor(hour, minute);
+}
+
+class DigitalClock implements ClockInterface {
+    constructor(h: number, m: number) { }
+    tick() {
+        console.log("beep beep");
+    }
+}
+class AnalogClock implements ClockInterface {
+    constructor(h: number, m: number) { }
+    tick() {
+        console.log("tick tock");
+    }
+}
+
+let digital = createClock(DigitalClock, 12, 17);
+let analog = createClock(AnalogClock, 7, 32);
+```
+
+#### 继承接口
+
+接口可以相互继承，并且一个接口可以继承多个接口。
+
+```typescript
+interface Shape {
+    color: string;
+}
+
+interface PenStroke {
+    penWidth: number;
+}
+
+interface Square extends Shape, PenStroke {
+    sideLength: number;
+}
+
+let square = <Square>{};
+square.color = "blue";
+square.sideLength = 10;
+square.penWidth = 5.0;
+```
+
+### 混合类型
+
+有时你会希望一个对象可以同时具有上面提到的多种类型。
+
+```typescript
+interface Counter {
+    (start: number): string;
+    interval: number;
+    reset(): void;
+}
+
+function getCounter(): Counter {
+    let counter = <Counter>function (start: number) { };
+    counter.interval = 123;
+    counter.reset = function () { };
+    return counter;
+}
+
+let c = getCounter();
+c(10);
+c.reset();
+c.interval = 5.0;
+```
+
+### 接口继承类
+
+> 当接口继承了一个类类型时，它会继承类的成员但不包括其实现。 就好像接口声明了所有类中存在的成员，但并没有提供具体实现一样。
+
+```typescript
+class Control {
+    private state: any;
+}
+// SelectableControl包含了Control的所有成员，包括私有成员state
+// 因为 state是私有成员，所以只能够是Control的子类们才能实现SelectableControl接口
+interface SelectableControl extends Control {
+    select(): void;
+}
+
+class Button extends Control implements SelectableControl {
+    select() { }
+}
+// SelectableControl接口和拥有select方法的Control类是一样的。
+class TextBox extends Control {
+    select() { }
+}
+
+// 错误：“Image”类型缺少“state”属性。
+class Image implements SelectableControl {
+    select() { }
+}
+
+class Location {
+
+}
+```
+
