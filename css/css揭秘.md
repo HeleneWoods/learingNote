@@ -1,0 +1,151 @@
+# 工具
+
+## 回退
+
+`Modernizr`： 一个js库，用来检测用户浏览器的html5和css3特性。
+
+`@supports`规则：相当于浏览器原生的Modernizr，但兼容性并不是很好。
+
+可以直接通过js来实现以上工具的功能：
+
+检测某个样式属性是否被支持，**核心思路是在任一元素的*element.style*对象上检查该属性是否存在。**
+
+```javascript
+function testProperty(property) {
+    var root = document.documentElement //<html>
+    if (property in root.style) {
+        root.classList.add(property.toLowerCase())
+        return true
+    }
+    root.classList.add('no-' + property.toLowerCase())
+    return false
+}
+```
+
+如果要检测具体属性值是否支持，就需要先将它赋值给对应的属性，然后检测浏览器是否还保存着这个值，前提是先要创建一个隐藏元素用来改变其样式：
+
+```javascript
+function testValue(id, value, property) {
+    var dummy = document.createElement('p')
+    dummy.style[property] = value
+    if (dummy.style[property]) {
+        root.classList.add(id)
+        return true
+    }
+    root.classList.add('no' + id)
+    return false
+}
+```
+
+# 技巧
+
+## 响应式
+
+- 替换元素：img、object、video、iframe等，需要设置一个`max-width: 100%;`。
+
+- 背景图需要完整铺满一个容器，不论容器尺寸如何变化时，使用一下属性：`background-size: cover;`。
+
+- 当图片或其它元素以行列式进行布局时，让视口宽度来决定列的数量，可以使用`Flexbox`或者`display:inline-block;`加上常规的文本折行行为来实现。
+
+  - ```css
+    /* 文本折行 */
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-all;
+    ```
+
+- 使用css3的`多列`时，应指定`column-width`列宽，而非`column-count`列数。
+
+## 简写
+
+`background: rebeccapurple;`和`background-color: rebeccapurple ` 并不等价，展开式写法不会清空相关的其它属性，如`background-image`属性可能会影响最终呈现的效果。
+
+`background`属性可以使用逗号分割，给同一个元素设置多个背景图片，但颜色只能设置一个，且只能放在最后一组：
+
+```css
+background: url("image.png") 0% 0%/60px 60px no-repeat padding-box,
+            url("image.png") 40px 10px/110px 110px no-repeat content-box,
+            url("image.png") 140px 40px/200px 100px no-repeat content-box #58a;
+/* 图片存在重叠时，前面的背景图会覆盖后面的背景图 */
+```
+
+## 边框
+
+### 半透明边框
+
+> 当想要给容器加一个半透明边框透出父容器背景的颜色时。
+
+```css
+/* 容器样式 */
+border: 10px solid hsla(0, 0%, 100%, .5);
+background: white;
+```
+
+如果是以上的写法，你会发现边框消失了，原因是默认情况下，容器的背景会延伸到边框区域的下层，如p1所示。
+
+![半透明边框](D:\MD_note\learingNote\img\transparent-border.png)
+
+当添加了`background-clip: padding-box;`后，浏览器会用内边距的外沿来把背景裁切掉。
+
+`background-clip`的默认值是`border-box`，意味着容器的背景会被边框的外沿（border-box）裁切掉。
+
+可以结合盒模型来理解上面那段话：
+
+![盒模型](D:\MD_note\learingNote\img\盒模型.png)
+
+content-box在最里面，padding-box包裹着content，border-box包裹着padding-box，最外层是margin-box，整个构成了一个完整的容器。p1和p2的容器大小一样，但在**给div设定宽高时，实际上是在给content-box设定大小**，完整的容器大小需要加上外层的padding、border、margin。而设定的background属性的范围不一定就是给content-box设定的范围。我们可以假设，background-color的默认范围是整个浏览器，`background-clip`**属性的值决定了保留哪部分的背景色**，当值是`boder-box`时，背景色从边框盒的最外沿开始裁切，也就导致content的背景色蔓延到了border下，同理，`padding-box`是由内边距外沿开始裁切，也就是边框的内沿，所以背景色不会蔓延到边框下。p1和p2的content-box大小和整个容器的大小是一样的，只是背景色的范围大小不同而已。
+
+# 基础
+
+## 单位
+
+`px`：固定单位；
+
+`em` ：相对父级字号进行响应式；
+
+`rem`：相对根级字号进行响应式；
+
+`vw`：相对可视区域的宽度进行响应式，全宽为100；
+
+`vh`：相对可视区域的高度进行响应式，全高为100；
+
+`vmin`、`vmax`：取最小或最大长度的百分比，这里对比的是可视区宽和高的长度；
+
+
+
+## 属性
+
+### inherit关键字
+
+`inherit`可以用在任何属性中：
+
+```css
+input, select, button { font: inherit } /* 将表单元素的字体设定为与页面其它部分相同 */
+a { color: inherit } /* 把超链接的颜色设定为与页面其它部分相同 */
+```
+
+同样适用于`background`、`border`等属性中。
+
+### background
+
+简写顺序：简写的顺序如下: bg-color || bg-image || bg-position [ / bg-size]? || bg-repeat || bg-attachment || bg-origin || bg-clip
+
+- `background-image`: 设置背景图像, 可以是真实的图片路径, 也可以是创建的渐变背景;
+- `background-position`: 设置背景图像的位置;
+-  `background-size`: 设置背景图像的大小;
+-  `background-repeat`: 指定背景图像的铺排方式;
+-  `background-attachment`: 指定背景图像是滚动还是固定;
+-  `background-origin`: 设置背景图像显示的原点[background-position相对定位的原点];
+-  `background-clip`: 设置背景图像向外剪裁的区域;
+-  `background-color`: 指定背景颜色。
+
+ ### HSLA颜色
+
+H：色度，取值（1~360）；
+
+S：饱和度，取值（0%~100%）；
+
+L：亮度，取值（0%~100%），0%最暗，100%最亮；
+
+A：不透明度，取值（0.0~1.0），0.0完全透明，1.0完全不透明。
+
