@@ -95,6 +95,40 @@ background: white;
 
 content-box在最里面，padding-box包裹着content，border-box包裹着padding-box，最外层是margin-box，整个构成了一个完整的容器。p1和p2的容器大小一样，但在**给div设定宽高时，实际上是在给content-box设定大小**，完整的容器大小需要加上外层的padding、border、margin。而设定的background属性的范围不一定就是给content-box设定的范围。我们可以假设，background-color的默认范围是整个浏览器，`background-clip`**属性的值决定了保留哪部分的背景色**，当值是`boder-box`时，背景色从边框盒的最外沿开始裁切，也就导致content的背景色蔓延到了border下，同理，`padding-box`是由内边距外沿开始裁切，也就是边框的内沿，所以背景色不会蔓延到边框下。p1和p2的content-box大小和整个容器的大小是一样的，只是背景色的范围大小不同而已。
 
+### 多重边框
+
+1、利用`box-shadow`伪造成边框的样式，使用逗号分隔制造多层边框的效果。
+
+box-shadow的第四个参数`spread`扩张半径可以让投影面积加大或减小，配合两个为0的偏移量和一个为0的模糊值，看起来就像一个边框。
+
+阴影是层层叠加的，第一层位于最顶层，所以第二层边框的扩张半径要比第一层的大。
+
+```css
+box-shadow: 0 0 0 10px #655, 
+			0 0 0 15px deeppink, 
+			0 2px 5px 15px rgba(0, 0, 0, .6);
+
+```
+
+![多重边框](D:\MD_note\learingNote\img\多重边框.png)
+
+这个hack方法和border不一样的一点是，box-shadow不会影响布局，不受box-sizing属性的影响，但可以通过内外边距模拟边框所占的空间。它还不会响应鼠标时间，比如悬停、点击等。
+
+![box-shadow不影响布局](D:\MD_note\learingNote\img\box-shadow和border的区别.png)
+
+2、当只需要两层边框时，使用`outline`绘制外层边框。
+
+outline相对box-shadow的好处是边框的样式比较灵活。
+
+如果想要实现上面的多重边框效果，代码如下：
+
+```css
+border: 10px solid #655;
+outline: 5px solid deeppink;
+```
+
+缺点是，当元素是圆角时，outline无法贴合，它的描边还是直角的，算是css里的bug。
+
 # 基础
 
 ## 单位
@@ -138,6 +172,23 @@ a { color: inherit } /* 把超链接的颜色设定为与页面其它部分相�
 -  `background-origin`: 设置背景图像显示的原点[background-position相对定位的原点];
 -  `background-clip`: 设置背景图像向外剪裁的区域;
 -  `background-color`: 指定背景颜色。
+
+### box-shadow
+
+和background一样，box-shadow也支持逗号分隔语法，来达到创建多个投影的效果。
+
+### outline
+
+描边，语法和border一样，效果也差不多，可以在border的外层再绘制出一层边框。
+
+使用`outline-offset`属性可以控制outline和元素边缘的间距，接受正负值。可以用这一属性做出漂亮的缝边效果：
+
+```css
+outline: 1px solid #fff;
+outline-offset: -20px;
+```
+
+![stitches](D:\MD_note\learingNote\img\outline-offset.png)
 
  ### HSLA颜色
 
